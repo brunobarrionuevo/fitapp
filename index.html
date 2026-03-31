@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meu Treino</title>
+  <style>
+    :root {
+      --bg: #0f0f13;
+      --surface: #1a1a24;
+      --surface2: #22222f;
+      --accent: #6c63ff;
+      --accent2: #ff6584;
+      --green: #43e97b;
+      --text: #f0f0f5;
+      --muted: #8888aa;
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100dvh;
+      padding-bottom: 100px;
+    }
+
+    /* HEADER */
+    header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      padding: 24px 20px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 2px 20px rgba(0,0,0,.5);
+    }
+    header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -.5px; }
+    header p  { color: var(--muted); font-size: .85rem; margin-top: 2px; }
+
+    .progress-bar-wrap {
+      margin-top: 14px;
+      background: var(--surface2);
+      border-radius: 99px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--green));
+      border-radius: 99px;
+      transition: width .4s ease;
+    }
+    .progress-label {
+      margin-top: 6px;
+      font-size: .78rem;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    /* DIAS DA SEMANA */
+    .week-nav {
+      display: flex;
+      gap: 8px;
+      padding: 16px 20px 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .week-nav::-webkit-scrollbar { display: none; }
+
+    .day-chip {
+      flex: 0 0 auto;
+      padding: 8px 14px;
+      border-radius: 99px;
+      background: var(--surface);
+      border: 2px solid transparent;
+      cursor: pointer;
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--muted);
+      transition: all .2s;
+      position: relative;
+    }
+    .day-chip.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .day-chip.done::after {
+      content: '';
+      position: absolute;
+      top: 4px; right: 4px;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+    .day-chip.rest-day { opacity: .55; }
+
+    /* CONTENT */
+    main { padding: 16px 20px; }
+
+    .day-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .day-header h2 { font-size: 1.2rem; font-weight: 700; }
+    .day-header .badge {
+      padding: 4px 12px;
+      border-radius: 99px;
+      font-size: .75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .badge.peito    { background: #ff6b6b22; color: #ff6b6b; }
+    .badge.costas   { background: #4ecdc422; color: #4ecdc4; }
+    .badge.pernas   { background: #ffe66d22; color: #ffe66d; }
+    .badge.ombro    { background: #a29bfe22; color: #a29bfe; }
+    .badge.braco    { background: #fd79a822; color: #fd79a8; }
+    .badge.descanso { background: #55efc422; color: #55efc4; }
+    .badge.full     { background: #6c63ff22; color: #6c63ff; }
+
+    /* EXERCISE CARD */
+    .exercise-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border: 1.5px solid transparent;
+      transition: border-color .2s, opacity .2s;
+      cursor: pointer;
+      user-select: none;
+    }
+    .exercise-card.checked {
+      border-color: var(--green);
+      opacity: .65;
+    }
+    .exercise-card.checked .ex-name { text-decoration: line-through; color: var(--muted); }
+
+    .check-circle {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      border: 2px solid var(--muted);
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .2s;
+    }
+    .exercise-card.checked .check-circle {
+      background: var(--green);
+      border-color: var(--green);
+    }
+    .check-circle svg { display: none; }
+    .exercise-card.checked .check-circle svg { display: block; }
+
+    .ex-info { flex: 1; }
+    .ex-name  { font-weight: 600; font-size: .95rem; }
+    .ex-meta  { color: var(--muted); font-size: .8rem; margin-top: 2px; }
+
+    .ex-icon {
+      font-size: 1.4rem;
+      width: 38px; height: 38px;
+      background: var(--surface2);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* TIMER */
+    .timer-fab {
+      position: fixed;
+      bottom: 24px; right: 20px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      border-radius: 99px;
+      padding: 14px 22px;
+      color: #fff;
+      font-size: .95rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 24px rgba(108,99,255,.45);
+      display: flex; align-items: center; gap: 8px;
+      z-index: 20;
+      transition: transform .15s;
+    }
+    .timer-fab:active { transform: scale(.95); }
+
+    /* TIMER MODAL */
+    .timer-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.75);
+      z-index: 30;
+      align-items: center; justify-content: center;
+    }
+    .timer-overlay.open { display: flex; }
+    .timer-modal {
+      background: var(--surface);
+      border-radius: 24px;
+      padding: 36px 40px;
+      text-align: center;
+      width: min(340px, 90vw);
+      box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    }
+    .timer-modal h3  { font-size: 1rem; color: var(--muted); margin-bottom: 8px; }
+    .timer-display   { font-size: 4rem; font-weight: 800; letter-spacing: -2px; margin: 8px 0 24px; }
+    .timer-display.running { color: var(--green); }
+    .timer-display.done    { color: var(--accent2); }
+
+    .timer-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .timer-btn {
+      padding: 10px 20px;
+      border-radius: 99px;
+      border: none;
+      font-size: .9rem; font-weight: 700;
+      cursor: pointer;
+      transition: transform .15s;
+    }
+    .timer-btn:active { transform: scale(.95); }
+    .timer-btn.primary { background: var(--accent); color: #fff; }
+    .timer-btn.ghost   { background: var(--surface2); color: var(--text); }
+    .timer-btn.red     { background: var(--accent2); color: #fff; }
+
+    .preset-btns { display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; }
+    .preset-btn  {
+      padding: 6px 14px;
+      border-radius: 99px;
+      border: 1.5px solid var(--surface2);
+      background: transparent;
+      color: var(--muted);
+      font-size: .82rem; font-weight: 600;
+      cursor: pointer;
+    }
+    .preset-btn.active { border-color: var(--accent); color: var(--accent); }
+
+    /* REST DAY */
+    .rest-card {
+      text-align: center;
+      padding: 60px 20px;
+    }
+    .rest-card .icon { font-size: 4rem; }
+    .rest-card h2    { margin-top: 16px; font-size: 1.4rem; }
+    .rest-card p     { color: var(--muted); margin-top: 8px; }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--green);
+      color: #111;
+      font-weight: 700;
+      padding: 10px 22px;
+      border-radius: 99px;
+      opacity: 0;
+      transition: opacity .3s, transform .3s;
+      pointer-events: none;
+      z-index: 40;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Meu Treino</h1>
+  <p id="today-label">Carregando...</p>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+  </div>
+  <div class="progress-label" id="progress-label">0 de 0 exercícios</div>
+</header>
+
+<nav class="week-nav" id="week-nav"></nav>
+<main id="main-content"></main>
+
+<button class="timer-fab" id="timer-fab">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+  <span id="fab-label">Descanso</span>
+</button>
+
+<!-- TIMER MODAL -->
+<div class="timer-overlay" id="timer-overlay">
+  <div class="timer-modal">
+    <h3>Intervalo de descanso</h3>
+    <div class="timer-display" id="timer-display">01:30</div>
+    <div class="preset-btns">
+      <button class="preset-btn" data-sec="60">1 min</button>
+      <button class="preset-btn active" data-sec="90">1:30</button>
+      <button class="preset-btn" data-sec="120">2 min</button>
+      <button class="preset-btn" data-sec="180">3 min</button>
+    </div>
+    <div class="timer-btns">
+      <button class="timer-btn primary" id="timer-start">Iniciar</button>
+      <button class="timer-btn ghost"   id="timer-reset">Reset</button>
+      <button class="timer-btn red"     id="timer-close">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── PROGRAMA DE TREINO ───────────────────────────────────────────────────────
+const PROGRAM = {
+  seg: {
+    label: 'Segunda', name: 'Peito + Tríceps', badge: 'peito',
+    exercises: [
+      { icon: '🏋️', name: 'Supino Reto com Barra',    meta: '4 séries × 10 reps' },
+      { icon: '💪', name: 'Supino Inclinado Halteres', meta: '3 séries × 12 reps' },
+      { icon: '🔁', name: 'Crucifixo Reto',            meta: '3 séries × 15 reps' },
+      { icon: '⬇️', name: 'Tríceps Pulley Corda',      meta: '4 séries × 12 reps' },
+      { icon: '💪', name: 'Tríceps Francês',            meta: '3 séries × 12 reps' },
+      { icon: '⬆️', name: 'Mergulho no Banco',         meta: '3 séries × 15 reps' },
+    ]
+  },
+  ter: {
+    label: 'Terça', name: 'Costas + Bíceps', badge: 'costas',
+    exercises: [
+      { icon: '🔝', name: 'Puxada Frontal',             meta: '4 séries × 10 reps' },
+      { icon: '🏋️', name: 'Remada Curvada com Barra',  meta: '4 séries × 8 reps'  },
+      { icon: '🔙', name: 'Remada Unilateral Halter',   meta: '3 séries × 12 reps' },
+      { icon: '⬆️', name: 'Pullover na Polia',          meta: '3 séries × 15 reps' },
+      { icon: '💪', name: 'Rosca Direta',               meta: '4 séries × 10 reps' },
+      { icon: '🔄', name: 'Rosca Martelo',              meta: '3 séries × 12 reps' },
+    ]
+  },
+  qua: {
+    label: 'Quarta', name: 'Descanso Ativo', badge: 'descanso',
+    rest: true,
+    tip: 'Aproveite para caminhar, alongar ou fazer mobilidade.'
+  },
+  qui: {
+    label: 'Quinta', name: 'Pernas', badge: 'pernas',
+    exercises: [
+      { icon: '🦵', name: 'Agachamento Livre',          meta: '5 séries × 8 reps'  },
+      { icon: '🏋️', name: 'Leg Press 45°',             meta: '4 séries × 12 reps' },
+      { icon: '🔙', name: 'Cadeira Extensora',          meta: '3 séries × 15 reps' },
+      { icon: '🔁', name: 'Mesa Flexora',               meta: '3 séries × 12 reps' },
+      { icon: '🦷', name: 'Panturrilha em Pé',          meta: '4 séries × 20 reps' },
+      { icon: '🔼', name: 'Stiff com Barra',            meta: '3 séries × 10 reps' },
+    ]
+  },
+  sex: {
+    label: 'Sexta', name: 'Ombros + Abdômen', badge: 'ombro',
+    exercises: [
+      { icon: '🏋️', name: 'Desenvolvimento com Barra', meta: '4 séries × 8 reps'  },
+      { icon: '↔️', name: 'Elevação Lateral',           meta: '4 séries × 15 reps' },
+      { icon: '⬆️', name: 'Elevação Frontal',           meta: '3 séries × 12 reps' },
+      { icon: '🔙', name: 'Crucifixo Invertido',        meta: '3 séries × 15 reps' },
+      { icon: '💪', name: 'Abdominal Supra',            meta: '4 séries × 20 reps' },
+      { icon: '🔄', name: 'Prancha Abdominal',          meta: '4 séries × 45 seg'  },
+    ]
+  },
+  sab: {
+    label: 'Sábado', name: 'Full Body Leve', badge: 'full',
+    exercises: [
+      { icon: '🏃', name: 'Aquecimento Cardio',         meta: '10 min esteira'     },
+      { icon: '🦵', name: 'Agachamento Goblet',         meta: '3 séries × 15 reps' },
+      { icon: '💪', name: 'Supino com Halteres',        meta: '3 séries × 12 reps' },
+      { icon: '🔝', name: 'Remada com Elástico',        meta: '3 séries × 15 reps' },
+      { icon: '🔄', name: 'Prancha + Rotação',          meta: '3 séries × 30 seg'  },
+    ]
+  },
+  dom: {
+    label: 'Domingo', name: 'Descanso Total', badge: 'descanso',
+    rest: true,
+    tip: 'Recuperação é parte do treino. Descanse bem!'
+  },
+};
+
+const DAYS = ['seg','ter','qua','qui','sex','sab','dom'];
+const DAY_MAP = { 0:'dom', 1:'seg', 2:'ter', 3:'qua', 4:'qui', 5:'sex', 6:'sab' };
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let checked   = JSON.parse(localStorage.getItem('checked')  || '{}');
+let activeDay = DAY_MAP[new Date().getDay()];
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function saveChecked() {
+  localStorage.setItem('checked', JSON.stringify(checked));
+}
+
+function isDayDone(day) {
+  const d = PROGRAM[day];
+  if (d.rest) return false;
+  const key = `${day}`;
+  return d.exercises.every((_, i) => checked[`${key}_${i}`]);
+}
+
+function weekProgress() {
+  let total = 0, done = 0;
+  DAYS.forEach(day => {
+    const d = PROGRAM[day];
+    if (d.rest) return;
+    d.exercises.forEach((_, i) => {
+      total++;
+      if (checked[`${day}_${i}`]) done++;
+    });
+  });
+  return { total, done };
+}
+
+function renderNav() {
+  const nav = document.getElementById('week-nav');
+  nav.innerHTML = DAYS.map(day => {
+    const d = PROGRAM[day];
+    const cls = [
+      'day-chip',
+      day === activeDay ? 'active' : '',
+      d.rest ? 'rest-day' : '',
+      isDayDone(day) ? 'done' : '',
+    ].join(' ');
+    return `<button class="${cls}" data-day="${day}">${d.label}</button>`;
+  }).join('');
+  nav.querySelectorAll('.day-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeDay = btn.dataset.day;
+      render();
+    });
+  });
+}
+
+function renderMain() {
+  const d = document.getElementById('main-content');
+  const day = PROGRAM[activeDay];
+
+  if (day.rest) {
+    d.innerHTML = `
+      <div class="rest-card">
+        <div class="icon">😴</div>
+        <h2>${day.name}</h2>
+        <p>${day.tip}</p>
+      </div>`;
+    return;
+  }
+
+  const items = day.exercises.map((ex, i) => {
+    const key = `${activeDay}_${i}`;
+    const done = !!checked[key];
+    return `
+      <div class="exercise-card ${done ? 'checked' : ''}" data-key="${key}">
+        <div class="ex-icon">${ex.icon}</div>
+        <div class="ex-info">
+          <div class="ex-name">${ex.name}</div>
+          <div class="ex-meta">${ex.meta}</div>
+        </div>
+        <div class="check-circle">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+      </div>`;
+  }).join('');
+
+  d.innerHTML = `
+    <div class="day-header">
+      <h2>${day.label}</h2>
+      <span class="badge ${day.badge}">${day.name}</span>
+    </div>
+    ${items}`;
+
+  d.querySelectorAll('.exercise-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const key = card.dataset.key;
+      checked[key] = !checked[key];
+      saveChecked();
+      render();
+      if (checked[key]) showToast('Exercício concluído!');
+      if (isDayDone(activeDay)) showToast('Treino do dia completo! 🎉');
+    });
+  });
+}
+
+function renderProgress() {
+  const { total, done } = weekProgress();
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById('progress-fill').style.width  = pct + '%';
+  document.getElementById('progress-label').textContent = `${done} de ${total} exercícios concluídos esta semana`;
+  const today = PROGRAM[activeDay];
+  document.getElementById('today-label').textContent =
+    today.rest ? `Hoje: ${today.name}` : `Hoje: ${today.label} — ${today.name}`;
+}
+
+function render() {
+  renderNav();
+  renderMain();
+  renderProgress();
+}
+
+// ─── TIMER ────────────────────────────────────────────────────────────────────
+let timerSec     = 90;
+let timerRemain  = 90;
+let timerRunning = false;
+let timerInterval = null;
+
+function fmt(s) {
+  const m = Math.floor(s / 60);
+  return `${String(m).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timer-display');
+  el.textContent = fmt(timerRemain);
+  el.className = 'timer-display' + (timerRunning ? ' running' : timerRemain === 0 ? ' done' : '');
+  document.getElementById('fab-label').textContent =
+    timerRunning ? fmt(timerRemain) : 'Descanso';
+}
+
+function startTimer() {
+  if (timerRemain <= 0) timerRemain = timerSec;
+  timerRunning = true;
+  document.getElementById('timer-start').textContent = 'Pausar';
+  timerInterval = setInterval(() => {
+    timerRemain--;
+    updateTimerDisplay();
+    if (timerRemain <= 0) {
+      clearInterval(timerInterval);
+      timerRunning = false;
+      document.getElementById('timer-start').textContent = 'Iniciar';
+      if ('vibrate' in navigator) navigator.vibrate([300, 100, 300]);
+      showToast('Tempo de descanso finalizado!');
+    }
+  }, 1000);
+}
+
+function pauseTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  document.getElementById('timer-start').textContent = 'Continuar';
+  updateTimerDisplay();
+}
+
+document.getElementById('timer-fab').addEventListener('click', () => {
+  document.getElementById('timer-overlay').classList.add('open');
+  updateTimerDisplay();
+});
+document.getElementById('timer-close').addEventListener('click', () => {
+  document.getElementById('timer-overlay').classList.remove('open');
+});
+document.getElementById('timer-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('timer-overlay'))
+    document.getElementById('timer-overlay').classList.remove('open');
+});
+document.getElementById('timer-start').addEventListener('click', () => {
+  timerRunning ? pauseTimer() : startTimer();
+});
+document.getElementById('timer-reset').addEventListener('click', () => {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerRemain  = timerSec;
+  document.getElementById('timer-start').textContent = 'Iniciar';
+  updateTimerDisplay();
+});
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    clearInterval(timerInterval);
+    timerRunning = false;
+    timerSec    = +btn.dataset.sec;
+    timerRemain = timerSec;
+    document.getElementById('timer-start').textContent = 'Iniciar';
+    updateTimerDisplay();
+  });
+});
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+let toastTimeout;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
